@@ -1,7 +1,7 @@
 data "aws_ami" "eks-worker-ami" {
   filter {
     name                            = "name"
-    values                          = ["amazon-eks-node-${var.k8s-version}-*"]
+    values                          = ["amazon-eks-node-${var.k8s_version}-*"]
   }
 
   most_recent                       = true
@@ -12,11 +12,11 @@ resource "aws_launch_configuration" "eks" {
   associate_public_ip_address       = true
   iam_instance_profile              = "${aws_iam_instance_profile.node.name}"
   image_id                          = "${data.aws_ami.eks-worker-ami.id}"
-  instance_type                     = "${var.node-instance-type}"
+  instance_type                     = "${var.node_instance_type}"
   name_prefix                       = "${var.name}-eks-"
   security_groups                   = ["${aws_security_group.node.id}"]
   key_name                          = "${var.key_name}"
-  user_data                         = "${file("${path.module}/user-data/node-userdata.sh")}"
+  user_data                         = "${file("${path.module}/userdata/node-userdata.sh")}"
 
   lifecycle {
     create_before_destroy = true
@@ -25,19 +25,35 @@ resource "aws_launch_configuration" "eks" {
 
 
 resource "aws_autoscaling_group" "nodes" {
-  desired_capacity                  = "${var.desired-capacity}"
+  desired_capacity                  = "${var.desired_capacity}"
   launch_configuration              = "${aws_launch_configuration.eks.id}"
-  max_size                          = "${var.max-size}"
-  min_size                          = "${var.min-size}"
+  max_size                          = "${var.max_size}"
+  min_size                          = "${var.min_size}"
   name                              = "${var.name}-eks-asg"
   vpc_zone_identifier               = ["${var.subnet_ids}"]
 
-  tags {
-    Name                                        = "${var.name}-eks-node"
-    "kubernetes.io/cluster/${var.name}"         = "owned"
-    Environment                                 = "${var.env}"
-    Application                                 = "${var.AppName}"
-    propagate_at_launch             = true
+  tag {
+    key                 = "Name"
+    value               = "${var.env}-${var.name}-node"
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "kubernetes.io/cluster/${var.name}"
+    value               = "owned"
+    propagate_at_launch = true
+  }
+    
+  tag {
+    key                 = "Environment"
+    value               = "${var.name}-eks-node"
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "Application"
+    value               = "${var.AppName}"
+    propagate_at_launch = true
   }
 
 }
@@ -55,7 +71,7 @@ resource "aws_security_group" "node" {
     cidr_blocks                     = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name                            = "${var.name}-nodes"
     Environment                     = "${var.env}"
     Application                     = "${var.AppName}"
@@ -74,14 +90,14 @@ resource "aws_security_group_rule" "Nodes-Ingress-Self" {
 }
 
 resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
-  cidr_blocks                       = ["${local.workstation-external-cidr}"]
+  cidr_blocks                       = ["${var.local_ip}"]
   from_port                         = "443"
   to_port                           = "443" 
   protocol                          = "tcp"
   type                              = "ingress" 
   description                       = "Allows Pods to talk to Cluster"
-  security_group_id                 = "${aws_security_group.cluster.id}"
-  source_security_group_id          = "${aws_security_group.node.id}"
+  security_group_id                 = "${aws_security_group.node.id}"
+#  source_security_group_id          = "${aws_security_group.node.id}"
 }
 
 

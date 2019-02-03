@@ -1,11 +1,11 @@
 resource "aws_eks_cluster" "main" {
   name                      = "${var.env}-${var.name}"
   role_arn                  = "${aws_iam_role.eks-iam-role.arn}"
-  version                   = "${var.version}"
+  version                   = "${var.k8s_version}"
 
   vpc_config {
     subnet_ids              = ["${var.subnet_ids}"]
-    security_group_ids      = ["${var.security_group_ids}"]
+ #   security_group_ids      = ["${var.security_group_ids}"]
   }
 }
 
@@ -23,7 +23,7 @@ resource "aws_security_group" "cluster" {
     cidr_blocks             = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name                    = "${var.name}-cluster"
     Environment             = "${var.env}"
     Application             = "${var.AppName}"
@@ -42,14 +42,14 @@ resource "aws_security_group_rule" "Cluster-Ingress-HTTPS" {
 }
 
 resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
-  cidr_blocks               = ["${local.workstation-external-cidr}"]
+  cidr_blocks               = ["${var.local_ip}"]
   from_port                 = "443"
   to_port                   = "443" 
   protocol                  = "tcp"
   type                      = "ingress" 
   description               = "Allows Pods to talk to Cluster"
   security_group_id         = "${aws_security_group.cluster.id}"
-  source_security_group_id  = "${aws_security_group.node.id}"
+#  source_security_group_id  = "${aws_security_group.node.id}"
 }
 
 data "aws_iam_policy" "AmazonEKSClusterPolicy" {
