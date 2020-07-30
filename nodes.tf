@@ -1,21 +1,21 @@
 data "aws_ami" "eks-worker-ami" {
   filter {
     name                            = "name"
-    values                          = ["amazon-eks-node-${var.k8s_version}-*"]
+    values                          = ["RAX-TSB-RHEL-Encrypted-EKS-PROXY-*"]
   }
   most_recent                       = true
-  owners                            = ["602401143452"] # Amazon
+  owners                            = ["273312704578"] # Amazon
 }
 
 resource "aws_launch_configuration" "eks" {
-  associate_public_ip_address       = true
+  associate_public_ip_address       = false
   iam_instance_profile              = aws_iam_instance_profile.node.name
   image_id                          = data.aws_ami.eks-worker-ami.id
   instance_type                     = var.node_instance_type
   name_prefix                       = "${var.name}-eks-"
   security_groups                   = [aws_security_group.node.id]
   key_name                          = var.key_name
-  user_data                         = file("${path.module}/userdata/node-userdata.sh")
+  user_data                         = data.template_file.userdata.rendered
   lifecycle {
     create_before_destroy = true
   }
@@ -129,4 +129,10 @@ resource "aws_iam_role_policy_attachment" "node-AmazonEC2ContainerRegistryReadOn
 resource "aws_iam_instance_profile" "node" {
   name = "${var.env}-${var.name}-eks-node-instance-profile"
   role = aws_iam_role.node.name
+}
+
+resource "aws_iam_role_policy_attachment" "main" {
+    count                                   = length(var.managed_iam_policy)
+    role                                    = aws_iam_role.node.name
+    policy_arn                              = element(var.managed_iam_policy, count.index)
 }
