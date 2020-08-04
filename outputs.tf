@@ -6,6 +6,7 @@ output "eks-platform-version" {
   value = aws_eks_cluster.main.platform_version
 }
 
-output "kubeconfig-certificate-authority-data" {
+output "cluster_ca_certificate" {
   value = aws_eks_cluster.main.certificate_authority.0.data
 }
+

@@ -7,7 +7,8 @@ resource "aws_eks_cluster" "main" {
     subnet_ids              = var.subnet_ids
     endpoint_public_access  = var.endpoint_public_access  
     endpoint_private_access = var.endpoint_private_access 
- #   security_group_ids      = ["${var.security_group_ids}"]
+    public_access_cidrs     = var.public_access_cidr
+    security_group_ids      = [aws_security_group.node.id]
   }
 }
 
@@ -24,10 +25,12 @@ resource "aws_security_group" "cluster" {
     cidr_blocks             = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name                    = "${var.name}-cluster"
-    Environment             = var.env
-  }  
+tags = merge(
+    local.common_tags,
+    map(
+        "Name", "${var.env}-${var.name}-SG"
+    )
+)
 }
 
 
