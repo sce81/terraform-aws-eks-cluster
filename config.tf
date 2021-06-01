@@ -1,17 +1,18 @@
 data "aws_eks_cluster" "cluster" {
-  name = element(concat(aws_eks_cluster.main.*.id, list("")), 0)
+  name = element(concat(aws_eks_cluster.main.*.id),0)
 }
 
 data "aws_eks_cluster_auth" "cluster" {
-  name = element(concat(aws_eks_cluster.main.*.id, list("")), 0)
+  name = element(concat(aws_eks_cluster.main.*.id),0)
 }
+
+
 
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   token                  = data.aws_eks_cluster_auth.cluster.token
-  load_config_file       = false
-  version                = "~> 1.9"
+  //load_config_file       = false
 }
 
 

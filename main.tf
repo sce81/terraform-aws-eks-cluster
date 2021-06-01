@@ -1,37 +1,40 @@
 resource "aws_eks_cluster" "main" {
-  name                      = "${var.env}-${var.name}"
-  role_arn                  = aws_iam_role.eks-iam-role.arn
-  version                   = var.k8s_version
+  name                          = "${var.env}-${var.name}"
+  role_arn                      = aws_iam_role.eks-iam-role.arn
+  version                       = var.k8s_version
+  enabled_cluster_log_types     = var.enabled_cluster_log_types
+
 
   vpc_config {
-    subnet_ids              = var.subnet_ids
-    endpoint_public_access  = var.endpoint_public_access  
-    endpoint_private_access = var.endpoint_private_access 
-    public_access_cidrs     = var.public_access_cidr
-    security_group_ids      = [aws_security_group.node.id]
+    subnet_ids                  = var.subnet_ids
+    endpoint_public_access      = var.endpoint_public_access  
+    endpoint_private_access     = var.endpoint_private_access 
+    public_access_cidrs         = var.public_access_cidr
+    security_group_ids          = [aws_security_group.node.id]
   }
 }
 
 
 resource "aws_security_group" "cluster" {
-  name                      = "${var.env}-${var.name}-cluster-sg"
-  description               = "Cluster Internal Communications"
-  vpc_id                    = var.vpc_id
+  name                          = "${var.env}-${var.name}-cluster-sg"
+  description                   = "Cluster Internal Communications"
+  vpc_id                        = var.vpc_id
 
   egress {
-    from_port               = 0
-    to_port                 = 0
-    protocol                = -1
-    cidr_blocks             = ["0.0.0.0/0"]
+    from_port                   = 0
+    to_port                     = 0
+    protocol                    = -1
+    cidr_blocks                 = ["0.0.0.0/0"]
   }
 
-tags = merge(
-    local.common_tags,
-    map(
-        "Name", "${var.env}-${var.name}-SG"
+    tags = merge(
+      local.common_tags,
+      tomap({
+        Name = "${var.project}-${var.env}-${var.name}"
+      })
     )
-)
-}
+  }
+
 
 
 resource "aws_security_group_rule" "Cluster-Ingress-HTTPS" {

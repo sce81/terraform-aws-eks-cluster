@@ -1,30 +1,22 @@
-data "aws_ami" "eks-worker-ami" {
-  filter {
-    name                            = "name"
-    values                          = ["RAX-TSB-RHEL-Encrypted-EKS-PROXY-*"]
-  }
-  most_recent                       = true
-  owners                            = ["273312704578"] # Amazon
-}
 
-resource "aws_launch_configuration" "eks" {
-  associate_public_ip_address       = false
-  iam_instance_profile              = aws_iam_instance_profile.node.name
-  image_id                          = data.aws_ami.eks-worker-ami.id
-  instance_type                     = var.node_instance_type
-  name_prefix                       = "${var.name}-eks-"
-  security_groups                   = [aws_security_group.node.id]
-  key_name                          = var.key_name
-  user_data                         = data.template_file.userdata.rendered
+resource "aws_launch_configuration" "nodes" {
+  associate_public_ip_address                 = false
+  iam_instance_profile                        = aws_iam_instance_profile.node.name
+  image_id                                    = var.ami_id
+  instance_type                               = var.node_instance_type
+  name_prefix                                 = "${var.env}-${var.name}-"
+  security_groups                             = [aws_security_group.node.id]
+  key_name                                    = var.key_name
+  user_data                                   = data.template_file.userdata.rendered
   lifecycle {
-    create_before_destroy = true
+    create_before_destroy                     = true
   }
 }
 
 
 resource "aws_autoscaling_group" "nodes" {
   desired_capacity                  = var.desired_capacity
-  launch_configuration              = aws_launch_configuration.eks.id
+  launch_configuration              = aws_launch_configuration.nodes.id
   max_size                          = var.max_size
   min_size                          = var.min_size
   name                              = "${var.name}-eks-asg"
@@ -49,6 +41,7 @@ resource "aws_autoscaling_group" "nodes" {
   }
 
 }
+
 
 
 resource "aws_security_group" "node" {
@@ -88,7 +81,6 @@ resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
   type                              = "ingress" 
   description                       = "Allows Pods to talk to Cluster"
   security_group_id                 = aws_security_group.node.id
-#  source_security_group_id          = "${aws_security_group.node.id}"
 }
 
 

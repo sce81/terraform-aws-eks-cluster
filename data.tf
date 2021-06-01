@@ -1,21 +1,26 @@
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
 data "template_file" "userdata" {
   template                      = file("${path.module}/userdata/node-userdata.sh")
 
-  vars = {
-      ClusterName               = "${var.env}-${var.name}"
-      ClusterCA                 = aws_eks_cluster.main.certificate_authority.0.data
-      ClusterAPIEndpoint        = aws_eks_cluster.main.endpoint
-  }
+    vars = {
+      "CLUSTERNAME"                         = aws_eks_cluster.main.id
+      "CERTIFICATE"                         = aws_eks_cluster.main.certificate_authority.0.data
+      "ENDPOINT"                            = aws_eks_cluster.main.endpoint
+      "REGION"                              = data.aws_region.current.name
+    }
 }
 
-data "aws_caller_identity" "current" {}
 
 locals {
-    common_tags = merge(map(
-        "Environment", var.env,
-        "Terraform", "true",
-        "ManagedBy", "rackspace"
-    ), var.extra_tags)
+  common_tags = tomap({
+    Name        = "${var.project}-${var.env}-${var.name}"
+    Project     = var.project
+    Environment = var.env
+    Terraform   = "true"
+    ManagedBy   = var.managedBy
+  })
 
 
 
