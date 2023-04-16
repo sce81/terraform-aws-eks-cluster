@@ -34,7 +34,7 @@ variable "desired_capacity" {
 variable "node_instance_type" {
   type       = string
   description = "EC2 Instance size of EKS Workers"
-  default    = "m5.medium"
+  default    = "m5.large"
 }
 variable "subnet_name" {
   type        = string
