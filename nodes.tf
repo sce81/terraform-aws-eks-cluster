@@ -25,7 +25,7 @@ resource "aws_autoscaling_group" "nodes" {
 
   tag {
     key                 = "Name"
-    value               = "${var.env}-${var.name}-node"
+    value               = "${var.name}-${var.env}-node"
     propagate_at_launch = true
   }
 
@@ -42,11 +42,14 @@ resource "aws_autoscaling_group" "nodes" {
   }
 
 
+  depends_on = [
+    aws_eks_cluster.main
+  ]
 }
 
 
 resource "aws_security_group" "node" {
-  name        = "${var.env}-${var.name}-node-sg"
+  name        = "${var.name}-${var.env}-node-sg"
   description = "Node Internal Communications"
   vpc_id      = data.aws_vpc.main.id
 
@@ -121,6 +124,6 @@ resource "aws_iam_role_policy_attachment" "node-AmazonEC2ContainerRegistryReadOn
 }
 
 resource "aws_iam_instance_profile" "node" {
-  name = "${var.env}-${var.name}-eks-node-instance-profile"
+  name = "${var.name}-${var.env}-eks-node-instance-profile"
   role = aws_iam_role.node.name
 }
