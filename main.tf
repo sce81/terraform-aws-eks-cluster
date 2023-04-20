@@ -1,5 +1,5 @@
 resource "aws_eks_cluster" "main" {
-  name     = "${var.name}-${var.env}"
+  name     = "${var.name}-${var.env_name}"
   role_arn = aws_iam_role.eks-iam-role.arn
   version  = var.k8s_version
 
@@ -11,7 +11,7 @@ resource "aws_eks_cluster" "main" {
 
 
 resource "aws_security_group" "cluster" {
-  name        = "${var.name}-${var.env}-cluster-sg"
+  name        = "${var.name}-${var.env_name}-cluster-sg"
   description = "Cluster Internal Communications"
   vpc_id      = data.aws_vpc.main.id
 
@@ -24,7 +24,7 @@ resource "aws_security_group" "cluster" {
 
   tags = {
     Name        = "${var.name}-cluster"
-    Environment = "${var.env}"
+    Environment = "${var.env_name}"
   }
 }
 
@@ -70,7 +70,7 @@ resource "aws_iam_role_policy_attachment" "eks-service-policy-attach" {
 
 
 resource "aws_iam_role" "eks-iam-role" {
-  name = "${var.name}-${var.env}-iam-role"
+  name = "${var.name}-${var.env_name}-iam-role"
 
   assume_role_policy = <<EOF
 {

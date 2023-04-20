@@ -1,4 +1,4 @@
-variable "env" {
+variable "env_name" {
   type        = string
   description = "Name of environment for tagging purposes"
 }
@@ -41,7 +41,6 @@ variable "subnet_name" {
   description = "name identifier of vpc subnets to use for EKS worker deployment"
   default     = "private"
 }
-//variable "local_ip" { type = list(string) }
 variable "k8s_version" {
   type        = string
   description = "EKS Supported version of Kubernetes to operate"
