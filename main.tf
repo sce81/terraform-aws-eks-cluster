@@ -39,16 +39,16 @@ resource "aws_security_group_rule" "Cluster-Ingress-HTTPS" {
   source_security_group_id = aws_security_group.node.id
 }
 
-//resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
-//  cidr_blocks       = ["${var.local_ip}"]
-//  from_port         = "443"
-//  to_port           = "443"
-//  protocol          = "tcp"
-//  type              = "ingress"
-//  description       = "Allows Pods to talk to Cluster"
-//  security_group_id = aws_security_group.cluster.id
-//  #  source_security_group_id  = "${aws_security_group.node.id}"
-//}
+resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
+  cidr_blocks       = [data.aws_vpc.cidr_block]
+  from_port         = "443"
+  to_port           = "443"
+  protocol          = "tcp"
+  type              = "ingress"
+  description       = "Allows Workers to talk to Cluster"
+  security_group_id = aws_security_group.cluster.id
+  #  source_security_group_id  = "${aws_security_group.node.id}"
+}
 
 data "aws_iam_policy" "AmazonEKSClusterPolicy" {
   arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"

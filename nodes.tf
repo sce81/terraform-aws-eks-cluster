@@ -1,6 +1,6 @@
 
 resource "aws_launch_configuration" "eks" {
-  associate_public_ip_address = true
+  associate_public_ip_address = false
   iam_instance_profile        = aws_iam_instance_profile.node.name
   image_id                    = data.aws_ami.eks-worker-ami.id
   instance_type               = var.node_instance_type
@@ -77,16 +77,16 @@ resource "aws_security_group_rule" "Nodes-Ingress-Self" {
   source_security_group_id = aws_security_group.node.id
 }
 
-//resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
-//  cidr_blocks       = ["${var.local_ip}"]
-//  from_port         = "443"
-//  to_port           = "443"
-//  protocol          = "tcp"
-//  type              = "ingress"
-//  description       = "Allows Pods to talk to Cluster"
-//  security_group_id = aws_security_group.node.id
-//  #  source_security_group_id          = "${aws_security_group.node.id}"
-//}
+resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
+  cidr_blocks       = [data.aws_vpc.cidr_block]
+  from_port         = "443"
+  to_port           = "443"
+  protocol          = "tcp"
+  type              = "ingress"
+  description       = "Allows Pods to talk to Cluster"
+  security_group_id = aws_security_group.node.id
+  #  source_security_group_id          = "${aws_security_group.node.id}"
+}
 
 
 resource "aws_iam_role" "node" {
