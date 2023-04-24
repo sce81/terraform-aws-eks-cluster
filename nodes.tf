@@ -25,7 +25,7 @@ resource "aws_autoscaling_group" "nodes" {
 
   tag {
     key                 = "Name"
-    value               = "${var.name}-${var.env_name}-node"
+    value               = "${var.name}-${var.env_name}-eks-node"
     propagate_at_launch = true
   }
 
@@ -49,7 +49,7 @@ resource "aws_autoscaling_group" "nodes" {
 
 
 resource "aws_security_group" "node" {
-  name        = "${var.name}-${var.env_name}-node-sg"
+  name        = "${var.name}-${var.env_name}-eks-node-sg"
   description = "Node Internal Communications"
   vpc_id      = data.aws_vpc.main.id
 
