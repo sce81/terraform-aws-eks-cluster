@@ -1,33 +1,4 @@
-resource "aws_eks_node_group" "nodes" {
-  cluster_name    = aws_eks_cluster.main.name
-  node_group_name = "${var.name}-${var.env_name}-eks-node-group"
-  node_role_arn   = aws_iam_role.node.name
-  subnet_ids      = data.aws_subnets.main.ids
-  version         = var.k8s_version
-  //release_version = nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)
 
-
-  scaling_config {
-    desired_size = var.desired_capacity
-    max_size     = var.max_size
-    min_size     = var.min_size
-  }
-
-  update_config {
-    max_unavailable = 1
-  }
-
-  # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
-  # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
-  depends_on = [
-    aws_iam_role_policy_attachment.node-AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.node-AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.node-AmazonEC2ContainerRegistryReadOnly,
-  ]
-  lifecycle {
-    ignore_changes = [scaling_config[0].desired_size]
-  }
-}
 
 resource "aws_launch_configuration" "eks" {
   associate_public_ip_address = false
@@ -55,19 +26,19 @@ resource "aws_autoscaling_group" "nodes" {
 
   tag {
     key                 = "Name"
-    value               = "${var.name}-${var.env_name}-eks-node"
+    value               = "${var.name}-${var.env_name}-eks-asg-node"
     propagate_at_launch = true
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/${var.name}"
+    key                 = "kubernetes.io/cluster/${aws_eks_cluster.main.name}"
     value               = "owned"
     propagate_at_launch = true
   }
 
   tag {
     key                 = "Environment"
-    value               = "${var.name}-eks-node"
+    value               = var.env_name
     propagate_at_launch = true
   }
 

@@ -42,5 +42,5 @@ variable "subnet_name" {
 variable "k8s_version" {
   type        = string
   description = "EKS Supported version of Kubernetes to operate"
-  default     = "1.25"
+  default     = "1.26"
 }
