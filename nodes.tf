@@ -6,7 +6,7 @@ resource "aws_launch_configuration" "eks" {
   instance_type               = var.node_instance_type
   name_prefix                 = "${var.name}-eks-"
   security_groups             = ["${aws_security_group.node.id}"]
-  key_name                    = var.worker_name
+  key_name                    = var.worker_key
   user_data                   = file("${path.module}/userdata/node-userdata.sh")
 
   lifecycle {

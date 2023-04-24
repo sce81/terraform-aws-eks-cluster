@@ -9,12 +9,10 @@ variable "vpc_name" {
 variable "name" {
   type        = string
   description = "Name of Kubernetes cluster for tagging purposes"
-  default     = 1
 }
-variable "worker_name" {
+variable "key_name" {
   type        = string
-  description = "Name tag to issue to EKS Worker"
-  default     = "worker"
+  description = "AWS Hosted SSH key to issue to EKS Worker"
 }
 variable "min_size" {
   type        = number
