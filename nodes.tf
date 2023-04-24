@@ -4,7 +4,7 @@ resource "aws_eks_node_group" "nodes" {
   node_role_arn   = aws_iam_role.node.name
   subnet_ids      = data.aws_subnets.main.ids
   version         = var.k8s_version
-  release_version = nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)
+  //release_version = nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)
 
 
   scaling_config {

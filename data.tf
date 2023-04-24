@@ -31,6 +31,6 @@ data "aws_ami" "eks-worker-ami" {
 }
 
 
-data "aws_ssm_parameter" "eks_ami_release_version" {
-  name = "/aws/service/eks/optimized-ami/${aws_eks_cluster.main.version}/amazon-linux-2/recommended/release_version"
-}
+//data "aws_ssm_parameter" "eks_ami_release_version" {
+//  name = "/aws/service/eks/optimized-ami/${aws_eks_cluster.main.version}/amazon-linux-2/recommended/release_version"
+//}
