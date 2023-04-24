@@ -78,7 +78,7 @@ resource "aws_security_group_rule" "Nodes-Ingress-Self" {
 }
 
 resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
-  cidr_blocks       = [data.aws_vpc.cidr_block]
+  cidr_blocks       = [data.aws_vpc.main.cidr_block]
   from_port         = "443"
   to_port           = "443"
   protocol          = "tcp"

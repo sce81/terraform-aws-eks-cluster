@@ -40,7 +40,7 @@ resource "aws_security_group_rule" "Cluster-Ingress-HTTPS" {
 }
 
 resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
-  cidr_blocks       = [data.aws_vpc.cidr_block]
+  cidr_blocks       = [data.aws_vpc.main.cidr_block]
   from_port         = "443"
   to_port           = "443"
   protocol          = "tcp"
