@@ -86,6 +86,4 @@ resource "aws_iam_role" "eks-iam-role" {
   ]
 }
 EOF
-
-
 }
