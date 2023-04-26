@@ -4,7 +4,7 @@ data "aws_region" "current" {}
 data "aws_vpc" "main" {
   filter {
     name   = "tag:Name"
-    values = ["${var.name}-${var.env_name}-vpc"]
+    values = ["${var.vpc_name}-${var.env_name}-vpc"]
   }
 }
 
