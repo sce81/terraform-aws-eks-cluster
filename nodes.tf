@@ -1,6 +1,6 @@
 
 resource "aws_launch_configuration" "eks" {
-  associate_public_ip_address = true
+  associate_public_ip_address = false
   iam_instance_profile        = aws_iam_instance_profile.node.name
   image_id                    = data.aws_ami.eks-worker-ami.id
   instance_type               = var.node_instance_type
