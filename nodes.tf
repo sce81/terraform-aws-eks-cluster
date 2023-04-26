@@ -3,7 +3,7 @@ resource "aws_eks_node_group" "main" {
   node_group_name = "${var.name}-${var.env_name}-eks-node-group"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = data.aws_subnets.main.ids
-  instance_types  = var.node_instance_type
+  instance_types  = [var.node_instance_type]
 
   scaling_config {
     desired_size = var.desired_capacity
