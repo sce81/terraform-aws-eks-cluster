@@ -32,7 +32,7 @@ variable "desired_capacity" {
 variable "node_instance_type" {
   type        = string
   description = "EC2 Instance size of EKS Workers"
-  default     = "m5.large"
+  default     = "t3.small"
 }
 variable "subnet_name" {
   type        = string
@@ -42,5 +42,5 @@ variable "subnet_name" {
 variable "k8s_version" {
   type        = string
   description = "EKS Supported version of Kubernetes to operate"
-  default     = "1.26"
+  default     = "1.25"
 }

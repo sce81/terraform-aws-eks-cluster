@@ -6,6 +6,10 @@ resource "aws_eks_cluster" "main" {
   vpc_config {
     subnet_ids = data.aws_subnets.main.ids
   }
+  depends_on = [
+    aws_iam_role_policy_attachment.managed-AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.managed-AmazonEKSVPCResourceController,
+  ]
 }
 
 
@@ -58,11 +62,19 @@ data "aws_iam_policy" "AmazonEKSServicePolicy" {
   arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
 }
 
-resource "aws_iam_role_policy_attachment" "eks-cluster-policy-attach" {
+data "aws_iam_policy" "AmazonEKSVPCResourceController" {
+  arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+}
+
+
+resource "aws_iam_role_policy_attachment" "managed-AmazonEKSClusterPolicy" {
   role       = aws_iam_role.eks-iam-role.name
   policy_arn = data.aws_iam_policy.AmazonEKSClusterPolicy.arn
 }
-
+resource "aws_iam_role_policy_attachment" "managed-AmazonEKSVPCResourceController" {
+  policy_arn = data.aws_iam_policy.AmazonEKSVPCResourceController.arn
+  role       = aws_iam_role.eks-iam-role.name
+}
 resource "aws_iam_role_policy_attachment" "eks-service-policy-attach" {
   role       = aws_iam_role.eks-iam-role.name
   policy_arn = data.aws_iam_policy.AmazonEKSServicePolicy.arn
