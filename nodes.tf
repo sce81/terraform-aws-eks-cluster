@@ -1,12 +1,13 @@
 
+
 resource "aws_launch_configuration" "eks" {
-  associate_public_ip_address = true
+  associate_public_ip_address = false
   iam_instance_profile        = aws_iam_instance_profile.node.name
   image_id                    = data.aws_ami.eks-worker-ami.id
   instance_type               = var.node_instance_type
   name_prefix                 = "${var.name}-eks-"
   security_groups             = ["${aws_security_group.node.id}"]
-  key_name                    = var.worker_name
+  key_name                    = var.key_name
   user_data                   = file("${path.module}/userdata/node-userdata.sh")
 
   lifecycle {
@@ -25,19 +26,19 @@ resource "aws_autoscaling_group" "nodes" {
 
   tag {
     key                 = "Name"
-    value               = "${var.name}-${var.env}-node"
+    value               = "${var.name}-${var.env_name}-eks-asg-node"
     propagate_at_launch = true
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/${var.name}"
+    key                 = "kubernetes.io/cluster/${aws_eks_cluster.main.name}"
     value               = "owned"
     propagate_at_launch = true
   }
 
   tag {
     key                 = "Environment"
-    value               = "${var.name}-eks-node"
+    value               = var.env_name
     propagate_at_launch = true
   }
 
@@ -48,8 +49,11 @@ resource "aws_autoscaling_group" "nodes" {
 }
 
 
+
+
+
 resource "aws_security_group" "node" {
-  name        = "${var.name}-${var.env}-node-sg"
+  name        = "${var.name}-${var.env_name}-eks-node-sg"
   description = "Node Internal Communications"
   vpc_id      = data.aws_vpc.main.id
 
@@ -62,7 +66,7 @@ resource "aws_security_group" "node" {
 
   tags = {
     Name        = "${var.name}-nodes"
-    Environment = "${var.env}"
+    Environment = "${var.env_name}"
   }
 }
 
@@ -77,16 +81,16 @@ resource "aws_security_group_rule" "Nodes-Ingress-Self" {
   source_security_group_id = aws_security_group.node.id
 }
 
-//resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
-//  cidr_blocks       = ["${var.local_ip}"]
-//  from_port         = "443"
-//  to_port           = "443"
-//  protocol          = "tcp"
-//  type              = "ingress"
-//  description       = "Allows Pods to talk to Cluster"
-//  security_group_id = aws_security_group.node.id
-//  #  source_security_group_id          = "${aws_security_group.node.id}"
-//}
+resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
+  cidr_blocks       = [data.aws_vpc.main.cidr_block]
+  from_port         = "443"
+  to_port           = "443"
+  protocol          = "tcp"
+  type              = "ingress"
+  description       = "Allows Pods to talk to Cluster"
+  security_group_id = aws_security_group.node.id
+  #  source_security_group_id          = "${aws_security_group.node.id}"
+}
 
 
 resource "aws_iam_role" "node" {
@@ -124,6 +128,6 @@ resource "aws_iam_role_policy_attachment" "node-AmazonEC2ContainerRegistryReadOn
 }
 
 resource "aws_iam_instance_profile" "node" {
-  name = "${var.name}-${var.env}-eks-node-instance-profile"
+  name = "${var.name}-${var.env_name}-eks-node-instance-profile"
   role = aws_iam_role.node.name
 }

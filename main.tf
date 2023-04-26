@@ -1,17 +1,21 @@
 resource "aws_eks_cluster" "main" {
-  name     = "${var.name}-${var.env}"
+  name     = "${var.name}-${var.env_name}"
   role_arn = aws_iam_role.eks-iam-role.arn
   version  = var.k8s_version
 
   vpc_config {
     subnet_ids = data.aws_subnets.main.ids
   }
+  depends_on = [
+    aws_iam_role_policy_attachment.managed-AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.managed-AmazonEKSVPCResourceController,
+  ]
 }
 
 
 
 resource "aws_security_group" "cluster" {
-  name        = "${var.name}-${var.env}-cluster-sg"
+  name        = "${var.name}-${var.env_name}-cluster-sg"
   description = "Cluster Internal Communications"
   vpc_id      = data.aws_vpc.main.id
 
@@ -24,7 +28,7 @@ resource "aws_security_group" "cluster" {
 
   tags = {
     Name        = "${var.name}-cluster"
-    Environment = "${var.env}"
+    Environment = "${var.env_name}"
   }
 }
 
@@ -39,16 +43,16 @@ resource "aws_security_group_rule" "Cluster-Ingress-HTTPS" {
   source_security_group_id = aws_security_group.node.id
 }
 
-//resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
-//  cidr_blocks       = ["${var.local_ip}"]
-//  from_port         = "443"
-//  to_port           = "443"
-//  protocol          = "tcp"
-//  type              = "ingress"
-//  description       = "Allows Pods to talk to Cluster"
-//  security_group_id = aws_security_group.cluster.id
-//  #  source_security_group_id  = "${aws_security_group.node.id}"
-//}
+resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
+  cidr_blocks       = [data.aws_vpc.main.cidr_block]
+  from_port         = "443"
+  to_port           = "443"
+  protocol          = "tcp"
+  type              = "ingress"
+  description       = "Allows Workers to talk to Cluster"
+  security_group_id = aws_security_group.cluster.id
+  #  source_security_group_id  = "${aws_security_group.node.id}"
+}
 
 data "aws_iam_policy" "AmazonEKSClusterPolicy" {
   arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
@@ -58,11 +62,19 @@ data "aws_iam_policy" "AmazonEKSServicePolicy" {
   arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
 }
 
-resource "aws_iam_role_policy_attachment" "eks-cluster-policy-attach" {
+data "aws_iam_policy" "AmazonEKSVPCResourceController" {
+  arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+}
+
+
+resource "aws_iam_role_policy_attachment" "managed-AmazonEKSClusterPolicy" {
   role       = aws_iam_role.eks-iam-role.name
   policy_arn = data.aws_iam_policy.AmazonEKSClusterPolicy.arn
 }
-
+resource "aws_iam_role_policy_attachment" "managed-AmazonEKSVPCResourceController" {
+  policy_arn = data.aws_iam_policy.AmazonEKSVPCResourceController.arn
+  role       = aws_iam_role.eks-iam-role.name
+}
 resource "aws_iam_role_policy_attachment" "eks-service-policy-attach" {
   role       = aws_iam_role.eks-iam-role.name
   policy_arn = data.aws_iam_policy.AmazonEKSServicePolicy.arn
@@ -70,7 +82,7 @@ resource "aws_iam_role_policy_attachment" "eks-service-policy-attach" {
 
 
 resource "aws_iam_role" "eks-iam-role" {
-  name = "${var.name}-${var.env}-iam-role"
+  name = "${var.name}-${var.env_name}-eks-cluster-iam-role"
 
   assume_role_policy = <<EOF
 {
@@ -86,6 +98,4 @@ resource "aws_iam_role" "eks-iam-role" {
   ]
 }
 EOF
-
-
 }

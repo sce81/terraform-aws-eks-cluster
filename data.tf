@@ -4,7 +4,7 @@ data "aws_region" "current" {}
 data "aws_vpc" "main" {
   filter {
     name   = "tag:Name"
-    values = ["${var.vpc_name}-*"]
+    values = ["${var.vpc_name}-${var.env_name}-vpc"]
   }
 }
 
@@ -29,3 +29,8 @@ data "aws_ami" "eks-worker-ami" {
   most_recent = true
   owners      = ["602401143452"] # Amazon
 }
+
+
+//data "aws_ssm_parameter" "eks_ami_release_version" {
+//  name = "/aws/service/eks/optimized-ami/${aws_eks_cluster.main.version}/amazon-linux-2/recommended/release_version"
+//}
