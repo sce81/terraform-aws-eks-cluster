@@ -80,7 +80,6 @@ resource "aws_iam_role_policy_attachment" "eks-service-policy-attach" {
   policy_arn = data.aws_iam_policy.AmazonEKSServicePolicy.arn
 }
 
-
 resource "aws_iam_role" "eks-iam-role" {
   name = "${var.name}-${var.env_name}-eks-cluster-iam-role"
 
