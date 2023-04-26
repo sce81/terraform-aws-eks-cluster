@@ -4,7 +4,7 @@ resource "aws_launch_configuration" "eks" {
   iam_instance_profile        = aws_iam_instance_profile.node.name
   image_id                    = data.aws_ami.eks-worker-ami.id
   instance_type               = var.node_instance_type
-  name_prefix                 = "${var.name}-eks-"
+  name_prefix                 = "${aws_eks_cluster.main.name}-lc-"
   security_groups             = ["${aws_security_group.node.id}"]
   key_name                    = var.key_name
   user_data                   = file("${path.module}/userdata/node-userdata.sh")
@@ -23,7 +23,7 @@ resource "aws_autoscaling_group" "nodes" {
   launch_configuration = aws_launch_configuration.eks.id
   max_size             = var.max_size
   min_size             = var.min_size
-  name                 = "${var.name}-eks-asg"
+  name                 = "${var.name}-${var.env_name}-eks-node-asg"
   vpc_zone_identifier  = data.aws_subnets.main.ids
 
   tag {
@@ -33,14 +33,14 @@ resource "aws_autoscaling_group" "nodes" {
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/${var.name}"
+    key                 = "kubernetes.io/cluster/${aws_eks_cluster.main.name}"
     value               = "owned"
     propagate_at_launch = true
   }
 
   tag {
     key                 = "Environment"
-    value               = "${var.name}-eks-node"
+    value               = var.env_name
     propagate_at_launch = true
   }
 
@@ -64,7 +64,7 @@ resource "aws_security_group" "node" {
   }
 
   tags = {
-    Name        = "${var.name}-nodes"
+    Name        = "${var.name}-${var.env_name}-nodes"
     Environment = "${var.env_name}"
   }
 
@@ -79,7 +79,7 @@ resource "aws_security_group_rule" "Nodes-Ingress-Self" {
   to_port                  = "65535"
   protocol                 = "-1"
   type                     = "ingress"
-  description              = "Allows Nodes to talk to each other"
+  description              = "Allows ${aws_eks_cluster.main.name} workers to talk to each other"
   security_group_id        = aws_security_group.node.id
   source_security_group_id = aws_security_group.node.id
 }
@@ -90,7 +90,7 @@ resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
   to_port           = "443"
   protocol          = "tcp"
   type              = "ingress"
-  description       = "Allow external services to talk to workers"
+  description       = "Allow external services to talk to ${aws_eks_cluster.main.name} workers"
   security_group_id = aws_security_group.node.id
 }
 
