@@ -130,6 +130,12 @@ resource "aws_iam_role_policy_attachment" "node-AmazonEC2ContainerRegistryReadOn
   role       = aws_iam_role.node.name
 }
 
+resource "aws_iam_role_policy_attachment" "node-AmazonEC2RoleforSSM" {
+  count = var.enable_ssm == true ? 1 : 0 
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+  role       = aws_iam_role.node.name
+}
+
 resource "aws_iam_instance_profile" "node" {
   name = "${var.name}-${var.env_name}-eks-node-instance-profile"
   role = aws_iam_role.node.name
