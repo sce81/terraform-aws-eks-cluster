@@ -82,7 +82,7 @@ resource "aws_iam_role_policy_attachment" "eks-service-policy-attach" {
 
 
 resource "aws_iam_role" "eks-iam-role" {
-  name = "${var.name}-${var.env_name}-iam-role"
+  name = "${var.name}-${var.env_name}-eks-cluster-iam-role"
 
   assume_role_policy = <<EOF
 {
