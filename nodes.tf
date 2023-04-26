@@ -4,6 +4,10 @@ resource "aws_eks_node_group" "main" {
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = data.aws_subnets.main.ids
   instance_types  = [var.node_instance_type]
+  launch_template {
+    name    = aws_launch_template.main.name
+    version = var.lt_version == null ? "$Latest" : var.lt_version
+  }
 
   scaling_config {
     desired_size = var.desired_capacity
@@ -35,70 +39,78 @@ resource "aws_eks_node_group" "main" {
 }
 
 
-//resource "aws_launch_template" "main" {
-//  name                                      = "${var.name}-${var.env_name}-eks-node"
-//  ebs_optimized                             = var.ebs_optimized
-//  instance_type                             = var.node_instance_type
+resource "aws_launch_template" "main" {
+  name_prefix   = "${var.name}-${var.env_name}-eks-lt-"
+  ebs_optimized = var.ebs_optimized
+  instance_type = var.node_instance_type
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.node.name
+  }
+
+  monitoring {
+    enabled = true
+  }
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name        = "${var.name}-${var.env_name}-node"
+      Environment = var.env_name
+    }
+  }
+}
+
+//resource "aws_launch_configuration" "eks" {
+//  associate_public_ip_address = false
+//  iam_instance_profile        = aws_iam_instance_profile.node.name
+//  image_id                    = data.aws_ami.eks-worker-ami.id
+//  instance_type               = var.node_instance_type
+//  name_prefix                 = "${aws_eks_cluster.main.name}-lc-"
+//  security_groups             = ["${aws_security_group.node.id}"]
+//  key_name                    = var.key_name
+//  user_data                   = file("${path.module}/userdata/node-userdata.sh")
 //
-//  iam_instance_profile {
-//    name = aws_iam_instance_profile.node.name
+//  lifecycle {
+//    create_before_destroy = true
 //  }
 //
-//  monitoring {
-//    enabled = true
-//  }
+//  depends_on = [
+//    aws_eks_cluster.main
+//  ]
 //}
 
-resource "aws_launch_configuration" "eks" {
-  associate_public_ip_address = false
-  iam_instance_profile        = aws_iam_instance_profile.node.name
-  image_id                    = data.aws_ami.eks-worker-ami.id
-  instance_type               = var.node_instance_type
-  name_prefix                 = "${aws_eks_cluster.main.name}-lc-"
-  security_groups             = ["${aws_security_group.node.id}"]
-  key_name                    = var.key_name
-  user_data                   = file("${path.module}/userdata/node-userdata.sh")
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [
-    aws_eks_cluster.main
-  ]
-}
-
-resource "aws_autoscaling_group" "nodes" {
-  desired_capacity     = var.desired_capacity
-  launch_configuration = aws_launch_configuration.eks.id
-  max_size             = var.max_size
-  min_size             = var.min_size
-  name                 = "${var.name}-${var.env_name}-eks-node-asg"
-  vpc_zone_identifier  = data.aws_subnets.main.ids
-
-  tag {
-    key                 = "Name"
-    value               = "${var.name}-${var.env_name}-node"
-    propagate_at_launch = true
-  }
-
-  tag {
-    key                 = "kubernetes.io/cluster/${aws_eks_cluster.main.name}"
-    value               = "owned"
-    propagate_at_launch = true
-  }
-
-  tag {
-    key                 = "Environment"
-    value               = var.env_name
-    propagate_at_launch = true
-  }
-
-
-  depends_on = [
-    aws_eks_cluster.main
-  ]
-}
+//resource "aws_autoscaling_group" "nodes" {
+//  desired_capacity     = var.desired_capacity
+//  launch_configuration = aws_launch_configuration.eks.id
+//  max_size             = var.max_size
+//  min_size             = var.min_size
+//  name                 = "${var.name}-${var.env_name}-eks-node-asg"
+//  vpc_zone_identifier  = data.aws_subnets.main.ids
+//
+//  tag {
+//    key                 = "Name"
+//    value               = "${var.name}-${var.env_name}-node"
+//    propagate_at_launch = true
+//  }
+//
+//  tag {
+//    key                 = "kubernetes.io/cluster/${aws_eks_cluster.main.name}"
+//    value               = "owned"
+//    propagate_at_launch = true
+//  }
+//
+//  tag {
+//    key                 = "Environment"
+//    value               = var.env_name
+//    propagate_at_launch = true
+//  }
+//
+//
+//  depends_on = [
+//    aws_eks_cluster.main
+//  ]
+//}
 
 
 resource "aws_security_group" "node" {
