@@ -1,3 +1,53 @@
+resource "aws_eks_node_group" "main" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.name}-${var.env_name}-eks-node-group"
+  node_role_arn   = aws_iam_role.node.arn
+  subnet_ids      = data.aws_subnets.main.ids
+  instance_types  = var.node_instance_type
+
+  scaling_config {
+    desired_size = var.desired_capacity
+    max_size     = var.max_size
+    min_size     = var.min_size
+  }
+
+  update_config {
+    max_unavailable = 1
+  }
+
+  # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
+  # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
+  depends_on = [
+    aws_iam_role_policy_attachment.example-AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.example-AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.example-AmazonEC2ContainerRegistryReadOnly,
+  ]
+  lifecycle {
+    ignore_changes = [scaling_config[0].desired_size]
+  }
+
+  tags = {
+    Name                                                 = "${aws_eks_cluster.main.name}-node-group"
+    Environment                                          = "${var.env_name}"
+    Cluster                                              = aws_eks_cluster.main.name
+    "kubernetes.io/cluster/${aws_eks_cluster.main.name}" = "owned"
+  }
+}
+
+
+//resource "aws_launch_template" "main" {
+//  name                                      = "${var.name}-${var.env_name}-eks-node"
+//  ebs_optimized                             = var.ebs_optimized
+//  instance_type                             = var.node_instance_type
+//
+//  iam_instance_profile {
+//    name = aws_iam_instance_profile.node.name
+//  }
+//
+//  monitoring {
+//    enabled = true
+//  }
+//}
 
 resource "aws_launch_configuration" "eks" {
   associate_public_ip_address = false
@@ -131,7 +181,7 @@ resource "aws_iam_role_policy_attachment" "node-AmazonEC2ContainerRegistryReadOn
 }
 
 resource "aws_iam_role_policy_attachment" "node-AmazonEC2RoleforSSM" {
-  count = var.enable_ssm == true ? 1 : 0 
+  count      = var.enable_ssm == true ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
   role       = aws_iam_role.node.name
 }
