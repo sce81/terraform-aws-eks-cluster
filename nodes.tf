@@ -1,7 +1,6 @@
 
-
 resource "aws_launch_configuration" "eks" {
-  associate_public_ip_address = false
+  associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.node.name
   image_id                    = data.aws_ami.eks-worker-ami.id
   instance_type               = var.node_instance_type
@@ -13,8 +12,11 @@ resource "aws_launch_configuration" "eks" {
   lifecycle {
     create_before_destroy = true
   }
-}
 
+  depends_on = [
+    aws_eks_cluster.main
+  ]
+}
 
 resource "aws_autoscaling_group" "nodes" {
   desired_capacity     = var.desired_capacity
@@ -26,19 +28,19 @@ resource "aws_autoscaling_group" "nodes" {
 
   tag {
     key                 = "Name"
-    value               = "${var.name}-${var.env_name}-eks-asg-node"
+    value               = "${var.name}-${var.env_name}-node"
     propagate_at_launch = true
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/${aws_eks_cluster.main.name}"
+    key                 = "kubernetes.io/cluster/${var.name}"
     value               = "owned"
     propagate_at_launch = true
   }
 
   tag {
     key                 = "Environment"
-    value               = var.env_name
+    value               = "${var.name}-eks-node"
     propagate_at_launch = true
   }
 
@@ -49,11 +51,8 @@ resource "aws_autoscaling_group" "nodes" {
 }
 
 
-
-
-
 resource "aws_security_group" "node" {
-  name        = "${var.name}-${var.env_name}-eks-node-sg"
+  name        = "${var.name}-${var.env_name}-node-sg"
   description = "Node Internal Communications"
   vpc_id      = data.aws_vpc.main.id
 
@@ -68,6 +67,10 @@ resource "aws_security_group" "node" {
     Name        = "${var.name}-nodes"
     Environment = "${var.env_name}"
   }
+
+  depends_on = [
+    aws_eks_cluster.main
+  ]
 }
 
 
@@ -87,14 +90,12 @@ resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
   to_port           = "443"
   protocol          = "tcp"
   type              = "ingress"
-  description       = "Allows Pods to talk to Cluster"
+  description       = "Allow external services to talk to workers"
   security_group_id = aws_security_group.node.id
-  #  source_security_group_id          = "${aws_security_group.node.id}"
 }
 
-
 resource "aws_iam_role" "node" {
-  name = "${var.name}-eks-node-role"
+  name = "${var.name}-${var.env_name}-eks-node-iam-role"
 
   assume_role_policy = <<POLICY
 {
@@ -111,6 +112,8 @@ resource "aws_iam_role" "node" {
 }
 POLICY
 }
+
+
 
 resource "aws_iam_role_policy_attachment" "node-AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
