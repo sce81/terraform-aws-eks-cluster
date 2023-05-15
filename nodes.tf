@@ -44,9 +44,9 @@ resource "aws_launch_template" "main" {
   ebs_optimized = var.ebs_optimized
   //instance_type = var.node_instance_type
 
-  iam_instance_profile {
-    name = aws_iam_instance_profile.node.name
-  }
+  //iam_instance_profile {
+  //  name = aws_iam_instance_profile.node.name
+  //}
 
   monitoring {
     enabled = true
