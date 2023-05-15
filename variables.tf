@@ -56,3 +56,8 @@ variable "lt_version" {
   description = "Override for $Latest LT Version"
   default     = null
 }
+variable "ebs_optimized" {
+  type = bool
+  description = "enable EBS optimized volumes"
+  default = true
+}
