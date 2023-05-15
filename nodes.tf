@@ -1,11 +1,60 @@
+resource "aws_eks_node_group" "main" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.name}-${var.env_name}-eks-node-group"
+  node_role_arn   = aws_iam_role.node.arn
+  subnet_ids      = data.aws_subnets.main.ids
+  instance_types  = [var.node_instance_type]
 
+  scaling_config {
+    desired_size = var.desired_capacity
+    max_size     = var.max_size
+    min_size     = var.min_size
+  }
+
+  update_config {
+    max_unavailable = 1
+  }
+
+  # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
+  # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
+  depends_on = [
+    aws_iam_role_policy_attachment.node-AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.node-AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.node-AmazonEC2ContainerRegistryReadOnly,
+  ]
+  lifecycle {
+    ignore_changes = [scaling_config[0].desired_size]
+  }
+
+  tags = {
+    Name                                                 = "${aws_eks_cluster.main.name}-node-group"
+    Environment                                          = "${var.env_name}"
+    Cluster                                              = aws_eks_cluster.main.name
+    "kubernetes.io/cluster/${aws_eks_cluster.main.name}" = "owned"
+  }
+}
+
+
+//resource "aws_launch_template" "main" {
+//  name                                      = "${var.name}-${var.env_name}-eks-node"
+//  ebs_optimized                             = var.ebs_optimized
+//  instance_type                             = var.node_instance_type
+//
+//  iam_instance_profile {
+//    name = aws_iam_instance_profile.node.name
+//  }
+//
+//  monitoring {
+//    enabled = true
+//  }
+//}
 
 resource "aws_launch_configuration" "eks" {
   associate_public_ip_address = false
   iam_instance_profile        = aws_iam_instance_profile.node.name
   image_id                    = data.aws_ami.eks-worker-ami.id
   instance_type               = var.node_instance_type
-  name_prefix                 = "${var.name}-eks-"
+  name_prefix                 = "${aws_eks_cluster.main.name}-lc-"
   security_groups             = ["${aws_security_group.node.id}"]
   key_name                    = var.key_name
   user_data                   = file("${path.module}/userdata/node-userdata.sh")
@@ -13,20 +62,23 @@ resource "aws_launch_configuration" "eks" {
   lifecycle {
     create_before_destroy = true
   }
-}
 
+  depends_on = [
+    aws_eks_cluster.main
+  ]
+}
 
 resource "aws_autoscaling_group" "nodes" {
   desired_capacity     = var.desired_capacity
   launch_configuration = aws_launch_configuration.eks.id
   max_size             = var.max_size
   min_size             = var.min_size
-  name                 = "${var.name}-eks-asg"
+  name                 = "${var.name}-${var.env_name}-eks-node-asg"
   vpc_zone_identifier  = data.aws_subnets.main.ids
 
   tag {
     key                 = "Name"
-    value               = "${var.name}-${var.env_name}-eks-asg-node"
+    value               = "${var.name}-${var.env_name}-node"
     propagate_at_launch = true
   }
 
@@ -49,11 +101,8 @@ resource "aws_autoscaling_group" "nodes" {
 }
 
 
-
-
-
 resource "aws_security_group" "node" {
-  name        = "${var.name}-${var.env_name}-eks-node-sg"
+  name        = "${var.name}-${var.env_name}-node-sg"
   description = "Node Internal Communications"
   vpc_id      = data.aws_vpc.main.id
 
@@ -65,9 +114,13 @@ resource "aws_security_group" "node" {
   }
 
   tags = {
-    Name        = "${var.name}-nodes"
+    Name        = "${var.name}-${var.env_name}-nodes"
     Environment = "${var.env_name}"
   }
+
+  depends_on = [
+    aws_eks_cluster.main
+  ]
 }
 
 
@@ -76,7 +129,7 @@ resource "aws_security_group_rule" "Nodes-Ingress-Self" {
   to_port                  = "65535"
   protocol                 = "-1"
   type                     = "ingress"
-  description              = "Allows Nodes to talk to each other"
+  description              = "Allows ${aws_eks_cluster.main.name} workers to talk to each other"
   security_group_id        = aws_security_group.node.id
   source_security_group_id = aws_security_group.node.id
 }
@@ -87,14 +140,12 @@ resource "aws_security_group_rule" "Nodes-Ingress-Local-HTTPS" {
   to_port           = "443"
   protocol          = "tcp"
   type              = "ingress"
-  description       = "Allows Pods to talk to Cluster"
+  description       = "Allow external services to talk to ${aws_eks_cluster.main.name} workers"
   security_group_id = aws_security_group.node.id
-  #  source_security_group_id          = "${aws_security_group.node.id}"
 }
 
-
 resource "aws_iam_role" "node" {
-  name = "${var.name}-eks-node-role"
+  name = "${var.name}-${var.env_name}-eks-node-iam-role"
 
   assume_role_policy = <<POLICY
 {
@@ -112,6 +163,8 @@ resource "aws_iam_role" "node" {
 POLICY
 }
 
+
+
 resource "aws_iam_role_policy_attachment" "node-AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.node.name
@@ -124,6 +177,12 @@ resource "aws_iam_role_policy_attachment" "node-AmazonEKS_CNI_Policy" {
 
 resource "aws_iam_role_policy_attachment" "node-AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.node.name
+}
+
+resource "aws_iam_role_policy_attachment" "node-AmazonEC2RoleforSSM" {
+  count      = var.enable_ssm == true ? 1 : 0
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
   role       = aws_iam_role.node.name
 }
 

@@ -27,7 +27,7 @@ resource "aws_security_group" "cluster" {
   }
 
   tags = {
-    Name        = "${var.name}-cluster"
+    Name        = "${aws_eks_cluster.main.name}-cluster"
     Environment = "${var.env_name}"
   }
 }
@@ -38,7 +38,7 @@ resource "aws_security_group_rule" "Cluster-Ingress-HTTPS" {
   to_port                  = "443"
   protocol                 = "tcp"
   type                     = "ingress"
-  description              = "Allows Pods to talk to Cluster"
+  description              = "Allows ${aws_eks_cluster.main.name} to talk to Controller"
   security_group_id        = aws_security_group.cluster.id
   source_security_group_id = aws_security_group.node.id
 }
@@ -49,7 +49,7 @@ resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
   to_port           = "443"
   protocol          = "tcp"
   type              = "ingress"
-  description       = "Allows Workers to talk to Cluster"
+  description       = "Allows externals to talk to ${aws_eks_cluster.main.name} Cluster"
   security_group_id = aws_security_group.cluster.id
   #  source_security_group_id  = "${aws_security_group.node.id}"
 }
@@ -79,7 +79,6 @@ resource "aws_iam_role_policy_attachment" "eks-service-policy-attach" {
   role       = aws_iam_role.eks-iam-role.name
   policy_arn = data.aws_iam_policy.AmazonEKSServicePolicy.arn
 }
-
 
 resource "aws_iam_role" "eks-iam-role" {
   name = "${var.name}-${var.env_name}-eks-cluster-iam-role"

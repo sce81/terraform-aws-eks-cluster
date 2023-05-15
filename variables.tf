@@ -44,3 +44,9 @@ variable "k8s_version" {
   description = "EKS Supported version of Kubernetes to operate"
   default     = "1.25"
 }
+
+variable "enable_ssm" {
+  type        = bool
+  description = "enable SSM for Worker Nodes"
+  default     = true
+}
