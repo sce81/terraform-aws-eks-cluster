@@ -42,7 +42,7 @@ resource "aws_eks_node_group" "main" {
 resource "aws_launch_template" "main" {
   name_prefix   = "${var.name}-${var.env_name}-eks-lt-"
   ebs_optimized = var.ebs_optimized
-  instance_type = var.node_instance_type
+  //instance_type = var.node_instance_type
 
   iam_instance_profile {
     name = aws_iam_instance_profile.node.name
