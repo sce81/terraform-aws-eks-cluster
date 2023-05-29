@@ -18,7 +18,7 @@ This module is intended to create an AWS EC2 Cluster with common dependancies
 - aws_security_group.node
 - aws_security_group_rule.controller_ingress
 - aws_security_group_rule.nodes_self
-- aws_security_group_rule.nodes_ingress
+- aws_security_group_rule.nodes_dynamic
 - aws_iam_role.node
 - aws_iam_role_policy_attachment.managed-AmazonEKSWorkerNodePolicy
 - aws_iam_role_policy_attachment.managed-AmazonEKS_CNI_Policy
@@ -76,7 +76,7 @@ addional tags can be appended using the following map values
 The following values are outputted
 
 - endpoint
-- eks-platform-version
+- eks-version
 - kubeconfig-certificate-authority-data
 
 
