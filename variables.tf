@@ -50,3 +50,14 @@ variable "enable_ssm" {
   description = "enable SSM for Worker Nodes"
   default     = true
 }
+
+variable "lt_version" {
+  type        = string
+  description = "Override for $Latest LT Version"
+  default     = null
+}
+variable "ebs_optimized" {
+  type = bool
+  description = "enable EBS optimized volumes"
+  default = true
+}

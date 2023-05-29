@@ -2,8 +2,8 @@ output "endpoint" {
   value = aws_eks_cluster.main.endpoint
 }
 
-output "eks-platform-version" {
-  value = aws_eks_cluster.main.platform_version
+output "eks-version" {
+  value = aws_eks_cluster.main.version
 }
 
 output "kubeconfig-certificate-authority-data" {

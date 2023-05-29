@@ -1,6 +1,19 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+data "aws_iam_policy" "AmazonEKSClusterPolicy" {
+  arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}
+
+data "aws_iam_policy" "AmazonEKSServicePolicy" {
+  arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+}
+
+data "aws_iam_policy" "AmazonEKSVPCResourceController" {
+  arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+}
+
+
 data "aws_vpc" "main" {
   filter {
     name   = "tag:Name"

@@ -1,6 +1,6 @@
 resource "aws_eks_cluster" "main" {
   name     = "${var.name}-${var.env_name}"
-  role_arn = aws_iam_role.eks-iam-role.arn
+  role_arn = aws_iam_role.cluster.arn
   version  = var.k8s_version
 
   vpc_config {
@@ -33,16 +33,18 @@ resource "aws_security_group" "cluster" {
 }
 
 
-resource "aws_security_group_rule" "Cluster-Ingress-HTTPS" {
+resource "aws_security_group_rule" "controller_ingress" {
   from_port                = "443"
   to_port                  = "443"
   protocol                 = "tcp"
   type                     = "ingress"
-  description              = "Allows ${aws_eks_cluster.main.name} to talk to Controller"
+  description              = "Allows ${aws_eks_cluster.main.name} Nodes to talk to Cluster"
   security_group_id        = aws_security_group.cluster.id
   source_security_group_id = aws_security_group.node.id
 }
 
+
+// Needs Work
 resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
   cidr_blocks       = [data.aws_vpc.main.cidr_block]
   from_port         = "443"
@@ -54,33 +56,22 @@ resource "aws_security_group_rule" "Cluster-Ingress-Local-HTTPS" {
   #  source_security_group_id  = "${aws_security_group.node.id}"
 }
 
-data "aws_iam_policy" "AmazonEKSClusterPolicy" {
-  arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-}
-
-data "aws_iam_policy" "AmazonEKSServicePolicy" {
-  arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-}
-
-data "aws_iam_policy" "AmazonEKSVPCResourceController" {
-  arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
-}
 
 
 resource "aws_iam_role_policy_attachment" "managed-AmazonEKSClusterPolicy" {
-  role       = aws_iam_role.eks-iam-role.name
+  role       = aws_iam_role.cluster.name
   policy_arn = data.aws_iam_policy.AmazonEKSClusterPolicy.arn
 }
 resource "aws_iam_role_policy_attachment" "managed-AmazonEKSVPCResourceController" {
   policy_arn = data.aws_iam_policy.AmazonEKSVPCResourceController.arn
-  role       = aws_iam_role.eks-iam-role.name
+  role       = aws_iam_role.cluster.name
 }
-resource "aws_iam_role_policy_attachment" "eks-service-policy-attach" {
-  role       = aws_iam_role.eks-iam-role.name
+resource "aws_iam_role_policy_attachment" "managed-AmazonEKSServicePolicy" {
+  role       = aws_iam_role.cluster.name
   policy_arn = data.aws_iam_policy.AmazonEKSServicePolicy.arn
 }
 
-resource "aws_iam_role" "eks-iam-role" {
+resource "aws_iam_role" "cluster" {
   name = "${var.name}-${var.env_name}-eks-cluster-iam-role"
 
   assume_role_policy = <<EOF
