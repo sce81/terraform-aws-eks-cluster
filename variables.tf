@@ -32,7 +32,7 @@ variable "desired_capacity" {
 variable "node_instance_type" {
   type        = string
   description = "EC2 Instance size of EKS Workers"
-  default     = "t3.small"
+  default     = "m5.large"
 }
 variable "subnet_name" {
   type        = string
@@ -57,7 +57,27 @@ variable "lt_version" {
   default     = null
 }
 variable "ebs_optimized" {
-  type = bool
+  type        = bool
   description = "enable EBS optimized volumes"
-  default = true
+  default     = true
+}
+
+variable "task_iam_policies" {
+  type        = any
+  default     = {}
+  description = "placeholder for passing custom iam policies to EKS nodes"
+}
+
+variable "node_ingress_rules" {
+  description = "map of security group rules for eks nodes"
+  type = map(object({
+    from_port    = optional(string)
+    to_port      = optional(string)
+    protocol     = optional(string)
+    type         = optional(string)
+    description  = optional(string)
+    source_sg_id = optional(string)
+    cidr_blocks  = optional(string)
+  }))
+  default = {}
 }

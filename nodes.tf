@@ -42,11 +42,6 @@ resource "aws_eks_node_group" "main" {
 resource "aws_launch_template" "main" {
   name_prefix   = "${var.name}-${var.env_name}-eks-lt-"
   ebs_optimized = var.ebs_optimized
-  //instance_type = var.node_instance_type
-
-  //iam_instance_profile {
-  //  name = aws_iam_instance_profile.node.name
-  //}
 
   monitoring {
     enabled = true
@@ -55,66 +50,16 @@ resource "aws_launch_template" "main" {
     resource_type = "instance"
 
     tags = {
-      Name        = "${var.name}-${var.env_name}-node"
+      Name        = "${var.name}-${var.env_name}-eks-node"
       Environment = var.env_name
     }
   }
 }
 
-//resource "aws_launch_configuration" "eks" {
-//  associate_public_ip_address = false
-//  iam_instance_profile        = aws_iam_instance_profile.node.name
-//  image_id                    = data.aws_ami.eks-worker-ami.id
-//  instance_type               = var.node_instance_type
-//  name_prefix                 = "${aws_eks_cluster.main.name}-lc-"
-//  security_groups             = ["${aws_security_group.node.id}"]
-//  key_name                    = var.key_name
-//  user_data                   = file("${path.module}/userdata/node-userdata.sh")
-//
-//  lifecycle {
-//    create_before_destroy = true
-//  }
-//
-//  depends_on = [
-//    aws_eks_cluster.main
-//  ]
-//}
-
-//resource "aws_autoscaling_group" "nodes" {
-//  desired_capacity     = var.desired_capacity
-//  launch_configuration = aws_launch_configuration.eks.id
-//  max_size             = var.max_size
-//  min_size             = var.min_size
-//  name                 = "${var.name}-${var.env_name}-eks-node-asg"
-//  vpc_zone_identifier  = data.aws_subnets.main.ids
-//
-//  tag {
-//    key                 = "Name"
-//    value               = "${var.name}-${var.env_name}-node"
-//    propagate_at_launch = true
-//  }
-//
-//  tag {
-//    key                 = "kubernetes.io/cluster/${aws_eks_cluster.main.name}"
-//    value               = "owned"
-//    propagate_at_launch = true
-//  }
-//
-//  tag {
-//    key                 = "Environment"
-//    value               = var.env_name
-//    propagate_at_launch = true
-//  }
-//
-//
-//  depends_on = [
-//    aws_eks_cluster.main
-//  ]
-//}
 
 
 resource "aws_security_group" "node" {
-  name        = "${var.name}-${var.env_name}-node-sg"
+  name        = "${var.name}-${var.env_name}-eks-node-sg"
   description = "Node Internal Communications"
   vpc_id      = data.aws_vpc.main.id
 
@@ -126,7 +71,7 @@ resource "aws_security_group" "node" {
   }
 
   tags = {
-    Name        = "${var.name}-${var.env_name}-nodes"
+    Name        = "${var.name}-${var.env_name}-eks-nodes"
     Environment = "${var.env_name}"
   }
 
@@ -141,19 +86,21 @@ resource "aws_security_group_rule" "nodes_self" {
   to_port                  = "65535"
   protocol                 = "-1"
   type                     = "ingress"
-  description              = "Allows ${aws_eks_cluster.main.name} nodes to talk to each other"
+  description              = "Allows ${aws_eks_cluster.main.name} eks nodes to talk to each other"
   security_group_id        = aws_security_group.node.id
   source_security_group_id = aws_security_group.node.id
 }
+resource "aws_security_group_rule" "nodes_dynamic" {
+  for_each = var.node_ingress_rules
 
-resource "aws_security_group_rule" "nodes_ingress" {
-  cidr_blocks       = [data.aws_vpc.main.cidr_block]
-  from_port         = "443"
-  to_port           = "443"
-  protocol          = "tcp"
-  type              = "ingress"
-  description       = "Allow external services to talk to ${aws_eks_cluster.main.name} workers"
-  security_group_id = aws_security_group.node.id
+  from_port                = each.value.from_port
+  to_port                  = each.value.to_port
+  protocol                 = each.value.protocol
+  type                     = each.value.type
+  description              = each.key
+  source_security_group_id = each.value.source_sg_id
+  cidr_blocks              = [each.value.cidr_blocks]
+  security_group_id        = aws_security_group.node.id
 }
 
 resource "aws_iam_role" "node" {
@@ -175,6 +122,11 @@ resource "aws_iam_role" "node" {
 POLICY
 }
 
+resource "aws_iam_policy" "main" {
+  name   = "${var.name}-${var.env_name}-eks-node-policy"
+  path   = "/"
+  policy = data.aws_iam_policy_document.main.json
+}
 
 resource "aws_iam_role_policy_attachment" "managed-AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
