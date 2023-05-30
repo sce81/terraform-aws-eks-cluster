@@ -62,7 +62,7 @@ variable "ebs_optimized" {
   default     = true
 }
 
-variable "task_iam_policies" {
+variable "dynamic_iam_policies" {
   type        = any
   default     = {}
   description = "placeholder for passing custom iam policies to EKS nodes"

@@ -46,11 +46,11 @@ data "aws_ami" "eks-worker-ami" {
 
 data "aws_iam_policy_document" "main" {
   dynamic "statement" {
-    for_each = var.task_iam_policies
+    for_each = var.dynamic_iam_policies
     content {
       effect    = lookup(statement.value, "effect", null)
-      actions   = lookup(statement.value, "actions", null)
-      resources = lookup(statement.value, "resources", null)
+      actions   = lookup(statement.value, "actions", [])
+      resources = lookup(statement.value, "resources", [])
     }
   }
 }
