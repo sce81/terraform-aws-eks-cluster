@@ -78,5 +78,6 @@ The following values are outputted
 - endpoint
 - eks-version
 - kubeconfig-certificate-authority-data
+- nodes_sg_id
 
 
