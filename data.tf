@@ -17,7 +17,7 @@ data "aws_iam_policy" "AmazonEKSVPCResourceController" {
 data "aws_vpc" "main" {
   filter {
     name   = "tag:Name"
-    values = ["${var.vpc_name}-${var.env_name}-vpc"]
+    values = ["${var.name}-${var.vpc_name}-vpc"]
   }
 }
 

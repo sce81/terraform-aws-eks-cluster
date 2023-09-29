@@ -123,7 +123,7 @@ POLICY
 }
 
 resource "aws_iam_policy" "main" {
-  count = var.dynamic_iam_policies == {} ? 0 : 1
+  count  = var.dynamic_iam_policies == {} ? 0 : 1
   name   = "${var.name}-${var.env_name}-eks-node-policy"
   path   = "/"
   policy = element(data.aws_iam_policy_document.main.json, count.index)
