@@ -17,7 +17,7 @@ data "aws_iam_policy" "AmazonEKSVPCResourceController" {
 data "aws_vpc" "main" {
   filter {
     name   = "tag:Name"
-    values = ["${var.name}-${var.vpc_name}-vpc"]
+    values = [var.vpc_name]
   }
 }
 
@@ -29,7 +29,7 @@ data "aws_subnets" "main" {
 
   filter {
     name   = "tag:Name"
-    values = ["*-${var.subnet_name}-*"]
+    values = ["*-${var.subnet_name}*"]
   }
 }
 
